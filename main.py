@@ -1,104 +1,80 @@
-import requests
-import json
+import sys
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "llama3.2:1b"
+# Import functions from your tested modules
+try:
+    import test as m1
+except ImportError:
+    print("[Error] Could not find test.py (Member 1 module). Ensure it is in C:\\myproject")
+    sys.exit(1)
 
-VALID_ACTIONS = [
-    "volume_up", "volume_down", "mute",
-    "brightness_up", "brightness_down",
-    "lock_pc", "unlock_pc"
-]
+try:
+    import member3 as m3
+except ImportError:
+    print("[Error] Could not find member3.py (Member 3 module). Ensure it is in C:\\myproject")
+    sys.exit(1)
 
-SYSTEM_PROMPT = """You are a command interpreter for a desktop assistant application.
-Convert user requests into a JSON object with exactly two keys: "action" and "value".
+def show_banner():
+    print("=" * 50)
+    print("      PROJECT AEGIS - UNIFIED OS ASSISTANT       ")
+    print("=" * 50)
+    print(" [HARDWARE CONTROLS - MEMBER 1]")
+    print("  1. Set Volume (Prompt for %)")
+    print("  2. Toggle Mute")
+    print("  3. Set Brightness (Prompt for %)")
+    print("  4. Check Battery Status")
+    print("  5. Lock Workstation")
+    print("-" * 50)
+    print(" [WORKSPACE SESSIONS - MEMBER 3]")
+    print("  6. Save Workspace Snapshot")
+    print("  7. View Saved Workspace")
+    print("  8. Restore Workspace Apps")
+    print("-" * 50)
+    print("  0. Exit")
+    print("=" * 50)
 
-Only use the following action names:
-- volume_up
-- volume_down
-- mute
-- brightness_up
-- brightness_down
-- lock_pc
-- unlock_pc
+def main():
+    while True:
+        show_banner()
+        choice = input("Enter option (0-8): ").strip()
 
-Important distinctions:
-- "volume_up" and "volume_down" ADJUST the volume level. They do NOT silence it.
-- "mute" completely SILENCES the audio. Use "mute" only if the user says "mute" or "silence".
+        # Hardware Controls (Member 1)
+        if choice == "1":
+            try:
+                vol = int(input("Enter volume percentage (0-100): "))
+                m1.set_volume(vol)
+            except ValueError:
+                print("Invalid number. Please enter a valid integer.")
+        elif choice == "2":
+            m1.toggle_mute()
+        elif choice == "3":
+            try:
+                bri = int(input("Enter brightness percentage (0-100): "))
+                m1.set_brightness(bri)
+            except ValueError:
+                print("Invalid number. Please enter a valid integer.")
+        elif choice == "4":
+            m1.get_battery_info()
+        elif choice == "5":
+            confirm = input("Are you sure you want to lock the PC? (y/n): ").strip().lower()
+            if confirm == "y":
+                m1.lock_workstation()
 
-Examples:
-User: "Decrease the volume."
-JSON: {"action": "volume_down", "value": 20}
+        # Workspace Controls (Member 3)
+        elif choice == "6":
+            m3.save_workspace()
+        elif choice == "7":
+            m3.view_saved_workspace()
+        elif choice == "8":
+            m3.restore_workspace()
 
-User: "Lower the volume a bit."
-JSON: {"action": "volume_down", "value": 15}
+        # Exit
+        elif choice == "0":
+            print("\nShutting down Project Aegis Console. Goodbye!")
+            break
+        else:
+            print("\nInvalid selection. Choose a number between 0 and 8.")
 
-User: "Increase the volume."
-JSON: {"action": "volume_up", "value": 20}
-
-User: "Turn the volume up."
-JSON: {"action": "volume_up", "value": 20}
-
-User: "Mute the audio."
-JSON: {"action": "mute", "value": null}
-
-User: "Silence the sound completely."
-JSON: {"action": "mute", "value": null}
-
-User: "Lock the computer."
-JSON: {"action": "lock_pc", "value": null}
-
-User: "Unlock the computer."
-JSON: {"action": "unlock_pc", "value": null}
-
-User: "Increase the screen brightness."
-JSON: {"action": "brightness_up", "value": 10}
-
-User: "Decrease the screen brightness."
-JSON: {"action": "brightness_down", "value": 10}
-
-Respond only with the JSON object. Do not include any explanation or additional text.
-"""
-
-
-def text_to_command(user_query):
-    try:
-        response = requests.post(
-            OLLAMA_URL,
-            json={
-                "model": MODEL_NAME,
-                "prompt": f'{SYSTEM_PROMPT}\nUser: "{user_query}"\nJSON:',
-                "format": "json",
-                "stream": False
-            },
-            timeout=15
-        )
-        response.raise_for_status()
-        raw = response.json()["response"]
-        parsed = json.loads(raw)
-
-        if parsed.get("action") not in VALID_ACTIONS:
-            return {"action": "unknown", "value": None}
-        return parsed
-
-    except requests.exceptions.RequestException:
-        return {"action": "error", "value": None}
-    except (json.JSONDecodeError, KeyError):
-        return {"action": "error", "value": None}
-
+        input("\nPress Enter to continue...")
 
 if __name__ == "__main__":
-    test_queries = [
-        "Turn down the volume.",
-        "Turn up the volume.",
-        "Mute the sound.",
-        "Lock my computer.",
-        "Unlock the computer.",
-        "Increase the brightness.",
-        "Dim the screen."
-    ]
-
-    for query in test_queries:
-        result = text_to_command(query)
-        status = "PASS" if result["action"] not in ("unknown", "error") else "FAIL"
-        print(f"[{status}] {query} -> {result}")
+    main()
